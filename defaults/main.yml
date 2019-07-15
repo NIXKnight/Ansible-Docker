@@ -1,0 +1,9 @@
+---
+# defaults file for Ansible-Docker
+DOCKER_PREREQUISITES:
+  - "apt-transport-https"
+  - "python-docker"
+DOCKER_APT_MIRROR_SCHEME: "https"
+DOCKER_APT_MIRROR: "download.docker.com"
+DOCKER_PKG: "docker-ce"
+DOCKER_APT_KEY: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"

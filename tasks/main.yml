@@ -1,0 +1,28 @@
+---
+# tasks file for Ansible-Docker
+- name: Install Prerequisite Packages
+  apt:
+    update_cache: yes
+    pkg: "{{ item }}"
+    state: present
+  with_items: "{{ DOCKER_PREREQUISITES }}"
+  when: ansible_os_family == 'Debian'
+
+- name: Add Docker Repository Key
+  apt_key:
+    url: "{{ DOCKER_APT_KEY }}"
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Setup Docker Package Repository
+  template:
+    src: "templates/docker-ce.list.j2"
+    dest: "/etc/apt/sources.list.d/docker-ce.list"
+  when: ansible_os_family == 'Debian'
+
+- name: Install Docker
+  apt:
+    update_cache: yes
+    pkg: "{{ DOCKER_PKG }}"
+    state: present
+  when: ansible_os_family == 'Debian'
