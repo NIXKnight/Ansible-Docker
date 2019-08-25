@@ -3,10 +3,21 @@
 - name: Install Prerequisite Packages
   apt:
     update_cache: yes
-    pkg: "{{ item }}"
+    pkg: "{{ DOCKER_PREREQUISITES }}"
     state: present
-  with_items: "{{ DOCKER_PREREQUISITES }}"
   when: ansible_os_family == 'Debian'
+
+- name: Check if {{ DOCKER_CONFIG_DIR }} Exists
+  stat:
+    path: "{{ DOCKER_CONFIG_DIR }}"
+  register: docker_config_dir
+
+- name: Create Directory {{ DOCKER_CONFIG_DIR }}
+  file:
+    path: "{{ DOCKER_CONTAINER_LOGS_DIR }}"
+    state: directory
+    mode: 0755
+  when: docker_config_dir.stat.exists and docker_config_dir.stat.isdir
 
 - name: Add Docker Repository Key
   apt_key:
@@ -26,3 +37,9 @@
     pkg: "{{ DOCKER_PKG }}"
     state: present
   when: ansible_os_family == 'Debian'
+
+- name: Write Docker Configuration File
+  template:
+    src: "templates/docker-daemon.json.j2"
+    dest: "/etc/docker/daemon.json"
+  notify: Restart Docker
