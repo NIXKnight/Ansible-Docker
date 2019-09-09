@@ -8,5 +8,15 @@ DOCKER_APT_MIRROR: "download.docker.com"
 DOCKER_PKG: "docker-ce"
 DOCKER_APT_KEY: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
 DOCKER_CONFIG_DIR: "/etc/docker"
+DOCKER_CONTAINER_LOGS_DIR: "/var/log/containers"
 DOCKER_CONFIG_EXEC_OPTS: "native.cgroupdriver=systemd"
+DOCKER_CONFIG_LOG_DRIVER: "syslog"
 DOCKER_CONFIG_STORAGE_DRIVER: "overlay2"
+DOCKER_CONFIG_LOG_OPTS_SYSLOG_TAG: "docker/{{ '{{' }}.Name{{ '}}' }}"
+DOCKER_DAEMON_CONFIG:
+  exec-opts:
+    - "{{ DOCKER_CONFIG_EXEC_OPTS }}"
+  storage-driver: "{{ DOCKER_CONFIG_STORAGE_DRIVER }}"
+  log-driver: "{{ DOCKER_CONFIG_LOG_DRIVER }}"
+  log-opts:
+    tag: "{{ DOCKER_CONFIG_LOG_OPTS_SYSLOG_TAG }}"

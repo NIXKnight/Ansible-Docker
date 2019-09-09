@@ -12,12 +12,24 @@
     path: "{{ DOCKER_CONFIG_DIR }}"
   register: docker_config_dir
 
+- name: Check if {{ DOCKER_CONTAINER_LOGS_DIR }} Exists
+  stat:
+    path: "{{ DOCKER_CONTAINER_LOGS_DIR }}"
+  register: docker_container_logs_dir
+
 - name: Create Directory {{ DOCKER_CONFIG_DIR }}
+  file:
+    path: "{{ DOCKER_CONFIG_DIR }}"
+    state: directory
+    mode: 0755
+  when: not docker_config_dir.stat.exists
+
+- name: Create Directory {{ DOCKER_CONTAINER_LOGS_DIR }}
   file:
     path: "{{ DOCKER_CONTAINER_LOGS_DIR }}"
     state: directory
     mode: 0755
-  when: docker_config_dir.stat.exists and docker_config_dir.stat.isdir
+  when: (not docker_container_logs_dir.stat.exists) and (DOCKER_ENABLE_LOGGING_SYSLOG)
 
 - name: Add Docker Repository Key
   apt_key:
@@ -40,6 +52,6 @@
 
 - name: Write Docker Configuration File
   template:
-    src: "templates/docker-daemon.json.j2"
-    dest: "/etc/docker/daemon.json"
+    src: "templates/etc/docker/daemon.json.j2"
+    dest: "{{ DOCKER_CONFIG_DIR }}/daemon.json"
   notify: Restart Docker
