@@ -1,0 +1,3 @@
+$template DockerLogs, "{{ DOCKER_CONTAINER_LOGS_DIR }}/%syslogtag:R,ERE,1,ZERO:.*docker/([^\[]+)--end%.log"
+if $programname == 'docker' then -?DockerLogs
+& stop

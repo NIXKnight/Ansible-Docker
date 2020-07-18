@@ -1,35 +1,12 @@
 ---
-# tasks file for Ansible-Docker
+# tasks file for Docker
 - name: Install Prerequisite Packages
   apt:
+    pkg: "{{ item }}"
     update_cache: yes
-    pkg: "{{ DOCKER_PREREQUISITES }}"
     state: present
+  with_items: "{{ DOCKER_PREREQUISITES }}"
   when: ansible_os_family == 'Debian'
-
-- name: Check if {{ DOCKER_CONFIG_DIR }} Exists
-  stat:
-    path: "{{ DOCKER_CONFIG_DIR }}"
-  register: docker_config_dir
-
-- name: Check if {{ DOCKER_CONTAINER_LOGS_DIR }} Exists
-  stat:
-    path: "{{ DOCKER_CONTAINER_LOGS_DIR }}"
-  register: docker_container_logs_dir
-
-- name: Create Directory {{ DOCKER_CONFIG_DIR }}
-  file:
-    path: "{{ DOCKER_CONFIG_DIR }}"
-    state: directory
-    mode: 0755
-  when: not docker_config_dir.stat.exists
-
-- name: Create Directory {{ DOCKER_CONTAINER_LOGS_DIR }}
-  file:
-    path: "{{ DOCKER_CONTAINER_LOGS_DIR }}"
-    state: directory
-    mode: 0755
-  when: (not docker_container_logs_dir.stat.exists) and (DOCKER_ENABLE_LOGGING_SYSLOG)
 
 - name: Add Docker Repository Key
   apt_key:
@@ -39,19 +16,46 @@
 
 - name: Setup Docker Package Repository
   template:
-    src: "templates/docker-ce.list.j2"
+    src: "templates/etc/apt/sources.list.d/docker-ce.list.j2"
     dest: "/etc/apt/sources.list.d/docker-ce.list"
   when: ansible_os_family == 'Debian'
 
 - name: Install Docker
   apt:
     update_cache: yes
-    pkg: "{{ DOCKER_PKG }}"
+    pkg: "{{ DOCKER_APT_PACKAGE }}"
     state: present
   when: ansible_os_family == 'Debian'
+
+- name: Create Container Logs Directory
+  file:
+    path: "{{ DOCKER_CONTAINER_LOGS_DIR }}"
+    state: directory
+    mode: 0755
+  when: DOCKER_ENABLE_SYSLOG
 
 - name: Write Docker Configuration File
   template:
     src: "templates/etc/docker/daemon.json.j2"
     dest: "{{ DOCKER_CONFIG_DIR }}/daemon.json"
   notify: Restart Docker
+  when: DOCKER_DAEMON_SET_CUSTOM_CONFIG
+
+- name: Write rsyslog Configuration for Docker Container Logging
+  template:
+    src: "templates/etc/rsyslog.d/30-docker.conf.j2"
+    dest: "/etc/rsyslog.d/30-docker.conf"
+  notify: Restart rsyslog
+  when: DOCKER_ENABLE_SYSLOG
+
+- name: Restart rsyslog
+  systemd:
+    name: rsyslog
+    state: restarted
+  when: DOCKER_ENABLE_SYSLOG
+
+- name: Restart Docker
+  systemd:
+    name: docker
+    state: restarted
+  when: DOCKER_DAEMON_SET_CUSTOM_CONFIG
