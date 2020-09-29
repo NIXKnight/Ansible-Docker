@@ -59,3 +59,10 @@
     name: docker
     state: restarted
   when: DOCKER_DAEMON_SET_CUSTOM_CONFIG
+
+- name: Add User Defined Docker Network
+  docker_network:
+    name: "{{ DOCKER_USER_DEFINED_NETWORK_NAME }}"
+    enable_ipv6: "{{ DOCKER_USER_DEFINED_NETWORK_ENABLE_IPV6 | bool }}"
+    ipam_config: "{{ DOCKER_USER_DEFINED_NETWORK_IPAM_CONFIG }}"
+  when: DOCKER_CREATE_USER_DEFINED_NETWORK
